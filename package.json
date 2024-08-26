@@ -10,8 +10,17 @@
     "astro": "astro"
   },
   "dependencies": {
-    "astro": "^4.14.2",
     "@astrojs/check": "^0.9.3",
+    "@jscad/io": "^2.4.8",
+    "@jscad/modeling": "^2.12.2",
+    "@jscad/regl-renderer": "^2.6.9",
+    "@jscad/stl-serializer": "^2.1.17",
+    "astro": "^4.14.2",
+    "three": "^0.167.1",
     "typescript": "^5.5.4"
+  },
+  "devDependencies": {
+    "@jscad/cli": "^2.3.2",
+    "@types/node": "^22.4.1"
   }
 }

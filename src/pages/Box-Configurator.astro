@@ -1,0 +1,289 @@
+---
+import console from "console";
+import Layout from "../layouts/Layout.astro";
+
+
+import pkg1 from "@jscad/modeling/src/primitives";
+  const { cuboid, roundedCuboid } = pkg1;
+
+  import pkg2 from "@jscad/modeling/src/operations/booleans";
+  const { subtract, union, intersect } = pkg2;
+
+  import pkg3 from "@jscad/io/index";
+  const { stlSerializer } = pkg3;
+
+  import pkg4 from "@jscad/modeling/src/operations/transforms";
+  const { translate } = pkg4;
+
+  import pkg5 from '@jscad/modeling/src/geometries';
+  const {geom3} = pkg5;
+
+
+interface Cordenates {
+  x: number;
+  y: number;
+  n: number;
+}
+
+const numColumns = 12; // Number of columns
+const numRows = 18; // Number of rows
+
+let n = 0;
+let walls: Array<Array<Cordenates>> = [];
+for (let i = 0; i < numRows; i++) {
+  walls.push([]);
+  for (let j = 0; j < numColumns; j++) {
+    walls[i][j] = {
+      x: (j%2) !== 0 ? 1 : 0,
+      y: (i%2) !== 0 ? 1 : 0,
+      n: n,
+    };
+    n++;
+  }
+}
+
+
+if (Astro.request.method === "POST") {
+  try {
+    const data = await Astro.request.formData();
+
+    for (let i = 0; i < numRows; i++) {
+      for (let j = 0; j < numColumns; j++) {
+        walls[i][j].x = data.get(`${walls[i][j].n}y`) ? 1 : 0;
+        walls[i][j].y = data.get(`${walls[i][j].n}x`) ? 1 : 0;
+      }
+    }
+
+  } catch (error) {
+    if (error instanceof Error) {
+      console.error(error.message);
+    }
+  }
+
+  const length = 50;
+  const width = 48;
+  const height = 5.5;
+  const wallThickness = 0.8;
+  const insidewallHeight = height;
+
+  const ux = length / numColumns;
+  const uy = width / numRows;
+
+  // Create the outer box
+  const outerBox = roundedCuboid({
+    center: [0, 0, height / 2],
+    size: [length, width, height],
+    roundRadius: 0.4,
+    segments: 4,
+  });
+
+  // Create the inner space (to be subtracted)
+  const innerSpace = translate(
+    [0, 0, wallThickness + height / 2],
+    cuboid({
+      size: [length - 2 * wallThickness, width - 2 * wallThickness, height],
+    })
+  );
+
+  // Subtract the inner space from the outer box
+  let box = subtract(outerBox, innerSpace);
+
+
+  // Add horizontal dividers
+  for (let i = 1; i < walls.length + 1; i++) {
+    for (let j = 1; j < walls[i - 1].length + 1; j++) {
+      if (walls[i - 1][j - 1].x === 1) {
+        const divider = translate(
+          [-length / 2 + ux * j + wallThickness / 2, -i * uy + width / 2, 0],
+          cuboid({
+            center: [
+              -ux / 2 - wallThickness / 2,
+              0,
+              insidewallHeight / 2 + 0.5,
+            ],
+            size: [ux, wallThickness, insidewallHeight],
+          })
+        );
+        box = union(box, divider);
+      }
+      if (walls[i - 1][j - 1].y === 1) {
+        const divider = translate(
+          [-length / 2 + ux * j, -i * uy + width / 2, 0],
+          cuboid({
+            center: [
+              0,
+              +uy / 2 - wallThickness / 2 + 0.3,
+              insidewallHeight / 2 + 0.5,
+            ],
+            size: [wallThickness, uy, insidewallHeight],
+          })
+        );
+        box = union(box, divider);
+      }
+    }
+  }
+
+  box = intersect(box, outerBox);
+
+
+
+
+  // Serialize the model to STL format
+  //const stlData = stlSerializer.serialize({ binary: false }, box);
+  const geometryData = geom3.toCompactBinary(box);
+
+  return new Response(JSON.stringify(geometryData), {
+    status: 200,
+    headers: {
+      "Content-Type": 'application/json', //"application/vnd.ms-pkistl", // STL MIME type
+      //"Content-Disposition": 'attachment; filename="model.stl"',co
+    },
+  });
+}
+
+---
+
+<Layout title="Welcome to Astro.">
+  <form
+    method="POST"
+    enctype="multipart/form-data"
+  >
+  <div class="grid"
+  style=`grid-template-rows: repeat(${numRows *2}, 1.5rem); grid-template-columns: repeat(${numColumns*2},  1.5rem);`>
+    {
+      walls.map((row) => (
+        <>
+          {row.map((column) => (
+            <>
+              <div class="estrechoX" />
+              <input type="checkbox" 
+              checked={column.x === 1}
+              name=`${column.n}x`
+              class="estrechoX"
+              />
+            </>
+          ))}
+          {row.map((column, j) => (
+            <>
+              <input
+                type="checkbox"
+                checked={column.y === 1}
+                name=`${column.n}y`
+                class="estrechoY"
+              />
+              <div style="background-color: black;"/>
+            </>
+          ))}
+        </>
+      ))
+    }
+    </div>
+    <button>Submit</button>
+  </form>
+
+  <div id="container"></div>
+
+    <script is:inline type="module">
+      import * as THREE from 'three';
+
+
+      const container = document.getElementById('container');
+
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+      const renderer = new THREE.WebGLRenderer({ antialias: true });
+
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      container.appendChild(renderer.domElement);
+
+      const light = new THREE.HemisphereLight(0xffffff, 0x444444);
+      light.position.set(0, 20, 0);
+      scene.add(light);
+
+      const controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+      camera.position.set(20, 20, 20);
+      controls.update();
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+
+        try {
+          const response = await fetch("Box-Configurator", {
+            method: "POST",
+            body: formData,
+          });
+
+          console.log(response);
+
+        } catch (error) {
+          console.error("Error:", error);
+        }
+      });
+
+      // // Fetch model data
+      fetch("/Box-Configurator")
+        .then(response => response.json())
+        .then(data => {
+          const geometry = new THREE.BufferGeometry();
+
+          const vertices = new Float32Array(data.polygons.flat());
+          geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+
+          geometry.computeVertexNormals();
+
+          const material = new THREE.MeshStandardMaterial({ color: 0x0077ff });
+          const mesh = new THREE.Mesh(geometry, material);
+
+          scene.add(mesh);
+          animate();
+        })
+        .catch(error => {
+          console.error('Error loading model:', error);
+        });
+
+      function animate() {
+        requestAnimationFrame(animate);
+        renderer.render(scene, camera);
+      }
+
+      // Handle window resize
+      window.addEventListener('resize', () => {
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        renderer.setSize(width, height);
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+      });
+    </script>
+
+    <!-- Import Three.js OrbitControls -->
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/examples/js/controls/OrbitControls.js"></script> -->
+</Layout>
+<style>
+  .grid {
+    display: grid;
+    width: fit-content;
+  }
+  .estrechoY {
+    height: 1.5rem;
+    margin: 0;
+  }
+  .estrechoX {
+    width: 1.5rem;
+    margin: 0;
+  }
+
+  /* Styles when the checkbox is checked */
+  .grid input:checked {
+    background-color: lightgreen;
+  }
+        /* Checkmark */
+  .grid input {
+    background-color: lightgreen;
+  }
+  /* Styles when the checkbox is not checked */
+  .grid input:not(:checked) {
+    background-color: lightcoral;
+  }
+</style>
