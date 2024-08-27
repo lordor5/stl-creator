@@ -1,63 +1,89 @@
 ---
-// src/pages/view-model.astro
-import { onMount } from "solid-js";
-import { createEffect } from "solid-js";
-import * as THREE from "three";
-import { STLLoader } from "three/examples/jsm/loaders/STLLoader";
-
-const loadSTL = () => {
-  const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(
-    75,
-    window.innerWidth / window.innerHeight,
-    0.1,
-    1000
-  );
-  const renderer = new THREE.WebGLRenderer();
-
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  document.body.appendChild(renderer.domElement);
-
-  const loader = new STLLoader();
-
-  loader.load("/api/jscad-model", function (geometry) {
-    const material = new THREE.MeshNormalMaterial();
-    const mesh = new THREE.Mesh(geometry, material);
-    scene.add(mesh);
-
-    camera.position.z = 50;
-
-    const animate = function () {
-      requestAnimationFrame(animate);
-
-      mesh.rotation.x += 0.01;
-      mesh.rotation.y += 0.01;
-
-      renderer.render(scene, camera);
-    };
-
-    animate();
-  });
-
-  window.addEventListener("resize", () => {
-    const width = window.innerWidth;
-    const height = window.innerHeight;
-    renderer.setSize(width, height);
-    camera.aspect = width / height;
-    camera.updateProjectionMatrix();
-  });
-};
-
-onMount(() => {
-  loadSTL();
-});
+import "../components/three-scene.js";
 ---
 
-<html>
+<!doctype html>
+<html lang="en">
   <head>
-    <title>3D Model Viewer</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Astro + Three.js</title>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@<version>/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@<version>/examples/jsm/"
+        }
+      }
+    </script>
   </head>
   <body>
-    <h1>3D Model Viewer</h1>
+    <h1>Three.js with Astro</h1>
+
+    <!-- Your Three.js scene will be rendered here -->
+    <div id="container"></div>
+
+    <script>
+      import * as THREE from "three";
+      import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+
+      const container = document.getElementById("container");
+
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(
+        75,
+        window.innerWidth / window.innerHeight,
+        0.1,
+        1000
+      );
+      const renderer = new THREE.WebGLRenderer({ antialias: true });
+
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      container.appendChild(renderer.domElement);
+
+      const light = new THREE.HemisphereLight(0xffffff, 0x444444);
+      light.position.set(0, 20, 0);
+      scene.add(light);
+
+      const controls = new OrbitControls(camera, renderer.domElement);
+      camera.position.set(20, 20, 20);
+      controls.update();
+
+      fetch("/api/model.json")
+        .then((response) => response.json())
+        .then((data) => {
+          const vertices = new Float32Array(data.polygons.flat());
+          const geometry = new THREE.BufferGeometry();
+          geometry.setAttribute(
+            "position",
+            new THREE.BufferAttribute(vertices, 3)
+          );
+          geometry.computeVertexNormals();
+
+          const material = new THREE.MeshStandardMaterial({ color: 0x0077ff });
+          const mesh = new THREE.Mesh(geometry, material);
+          scene.add(mesh);
+
+          animate();
+        })
+        .catch((error) => {
+          console.error("Error loading model:", error);
+        });
+
+      function animate() {
+        requestAnimationFrame(animate);
+        controls.update();
+        renderer.render(scene, camera);
+      }
+
+      window.addEventListener("resize", () => {
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        renderer.setSize(width, height);
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+      });
+    </script>
   </body>
 </html>
