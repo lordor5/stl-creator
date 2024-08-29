@@ -21,11 +21,7 @@ interface Cordenates {
   n: number;
 }
 
-export async function POST({
-  request,
-}: {
-  request: Request;
-}): Promise<APIRoute> {
+export async function POST({ request }: { request: Request }) {
   const { walls, data } = await request.json();
 
   const numColumns = walls[0].length;
