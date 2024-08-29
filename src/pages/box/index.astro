@@ -118,15 +118,10 @@ const defWallThickness = 0.8;
   import { OrbitControls } from "three/addons/controls/OrbitControls.js";
   import { STLLoader } from "three/addons/loaders/STLLoader.js";
 
-  const CamWidth = 100;
-  const CamHeight = 100;
-
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera( 45, CamWidth / CamHeight, 1, 1000 );
-
- 
 
   const canvas = document.getElementById("myCanvas");
+  const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
 
   const renderer = new THREE.WebGLRenderer();
   renderer.setSize(canvas.clientWidth, canvas.clientHeight);
@@ -161,6 +156,41 @@ const defWallThickness = 0.8;
 
       lastModel = null; // Reset the lastModel reference
     }
+  }
+
+  function updateCameraAndControls(model) {
+    const boundingBox = new THREE.Box3().setFromObject(model);
+    const center = boundingBox.getCenter(new THREE.Vector3());
+    const size = boundingBox.getSize(new THREE.Vector3());
+
+    const maxDim = Math.max(size.x, size.y, size.z);
+    const fov = camera.fov * (Math.PI / 180);
+    // let cameraZ = Math.abs(maxDim / Math.sin(fov / 2));
+
+    // Set the camera position and update controls
+    // camera.position.set(center.x, center.y, cameraZ);
+    controls.target.set(center.x, center.y, center.z);
+    controls.update();
+
+    camera.updateProjectionMatrix();
+  }
+
+  function loadModel(arrayBuffer) {
+      const loader = new STLLoader();
+      const geometry = loader.parse(arrayBuffer);
+
+      const material = new THREE.MeshPhongMaterial({ color: 0xffffff });
+      const mesh = new THREE.Mesh(geometry, material);
+      scene.add(mesh);
+
+      mesh.position.set(0, 0, 0);
+      mesh.rotation.set(-Math.PI / 2, 0, 0);
+      mesh.scale.set(1, 1, 1);
+
+      removeLastModel();
+      lastModel = mesh;
+
+      updateCameraAndControls(mesh);
   }
 
   let walls = defWalls;
@@ -247,22 +277,7 @@ const defWallThickness = 0.8;
         return response.arrayBuffer(); // Fetch the data as an ArrayBuffer
       })
       .then((arrayBuffer) => {
-        // Load the STL Model using STLLoader
-        const loader = new STLLoader();
-        const geometry = loader.parse(arrayBuffer); // Parse the ArrayBuffer to geometry
-
-        const material = new THREE.MeshPhongMaterial({ color: 0xffffff });
-        const mesh = new THREE.Mesh(geometry, material);
-        scene.add(mesh);
-
-        // Set initial position and scale of the model
-        mesh.position.set(0, 0, 0);
-        mesh.rotation.set(-Math.PI / 2, 0, 0);
-        mesh.scale.set(1, 1, 1); // Adjust scale according to your model
-
-        removeLastModel();
-
-        lastModel = mesh;
+        loadModel(arrayBuffer);
       })
       .catch((error) => {
         console.error("Error loading model:", error);
