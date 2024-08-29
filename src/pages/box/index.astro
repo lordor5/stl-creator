@@ -1,77 +1,322 @@
 ---
 import Layout from "../../layouts/Layout.astro";
-import Viwer from "../../components/Viwer.astro";
 
 interface Cordenates {
   x: number;
   y: number;
   n: number;
 }
+const defNumColumns = parseInt(Astro.url.searchParams.get('col') ?? '12');
+const defNumRows = parseInt(Astro.url.searchParams.get('row') ?? '18');
 
-const numColumns = 12; // Number of columns
-const numRows = 18; // Number of rows
 
 let n = 0;
-let walls: Array<Array<Cordenates>> = [];
-for (let i = 0; i < numRows; i++) {
-  walls.push([]);
-  for (let j = 0; j < numColumns; j++) {
-    walls[i][j] = {
-      x: (j%2) !== 0 ? 1 : 0,
-      y: (i%2) !== 0 ? 1 : 0,
+let defWalls: Array<Array<Cordenates>> = [];
+for (let i = 0; i < defNumRows; i++) {
+  defWalls.push([]);
+  for (let j = 0; j < defNumColumns; j++) {
+    defWalls[i][j] = {
+      x: 1,//(j%2) !== 0 ? 1 : 0,
+      y: 1,//(i%2) !== 0 ? 1 : 0,
       n: n,
     };
     n++;
   }
 }
+
+const defLength = 50;
+const defWidth =  48;
+const defHeight = 5.5;
+const defWallThickness = 0.8;
 ---
 
 <Layout title="Welcome to Astro.">
   <main>
+
     <form
     method="POST"
     enctype="multipart/form-data"
     id="walls"
   >
-  <div class="grid"
-  style=`grid-template-rows: repeat(${numRows *2}, 1.5rem); grid-template-columns: repeat(${numColumns*2},  1.5rem);`>
-    {
-      walls.map((row) => (
-        <>
-          {row.map((column) => (
-            <>
-              <div class="estrechoX" />
-              <input type="checkbox" 
-              checked={column.x === 1}
-              name=`${column.n}x`
-              class="estrechoX"
-              />
-            </>
-          ))}
-          {row.map((column, j) => (
-            <>
-              <input
-                type="checkbox"
-                checked={column.y === 1}
-                name=`${column.n}y`
-                class="estrechoY"
-              />
-              <div style="background-color: black;"/>
-            </>
-          ))}
-        </>
-      ))
-    }
-    </div>
-    <button>Submit</button>
-  </form>
+  <div class="options">
+    <label for="numColumns">Columns</label>
+    <input type="number" name=`numColumns` placeholder={`${defNumColumns}`}/>
 
-  <div class="viwer">
-    <Viwer />    
+    <label for="numRows">Rows</label>
+    <input type="number" name=`numRows`placeholder={`${defNumRows}`} />
+
+    <div style="display: flex;">
+      <img src="/Tx.svg" alt="">
+      <div style="display: flex; flex-direction: column;">
+        <label for="length">Length</label>
+        <input type="number" name=`length` placeholder={`${defLength}`}/>
+      </div>
+    </div>
+
+    <div style="display: flex;">
+      <img src="/Ty.svg" alt="">
+      <div style="display: flex; flex-direction: column;">
+        <label for="length">Width</label>
+        <input type="number" name=`width` placeholder={`${defWidth}`}/>
+      </div>
+    </div>
+
+    <label for="height">Height</label>
+    <input type="number" name=`height` placeholder={`${defHeight}`}/>
+
+    <label for="wallThickness">Wall Thickness</label>
+    <input type="number" name=`wallThickness`placeholder={`${defWallThickness}`} step="0.4" min="0.8"/>
+
+    <div class="info"><img src="/Ux.svg" alt=""><p id='Ux'></p></div>
+    <div class="info"><img src="/Uy.svg" alt=""><p id='Uy'></p></div>
+
+    <!-- <div>
+      <button onclick="checkAllWalls()">Check all walls</button>
+      <button onclick="checkHalfWalls()">Check Half walls</button>
+    </div> -->
+
   </div>
+
+                
+    <div class="grid"
+    style=`grid-template-rows: repeat(${defNumRows *2}, 1.5rem); grid-template-columns: repeat(${defNumColumns*2},  1.5rem);`>
+      {
+        defWalls.map((row) => (
+          <>
+            {row.map((column) => (
+              <>
+                <div class="estrechoX" />
+                <input type="checkbox" 
+                checked={column.x === 1}
+                name=`${column.n}x`
+                class="estrechoX"
+                />
+              </>
+            ))}
+            {row.map((column, j) => (
+              <>
+                <input
+                  type="checkbox"
+                  checked={column.y === 1}
+                  name=`${column.n}y`
+                  class="estrechoY"
+                />
+                <div style="background-color: black;"/>
+              </>
+            ))}
+          </>
+        ))
+      }
+      </div>
+      <button>Submit</button>
+    </form>
+    <div class="viwer">
+      <div id="myCanvas"></div> 
+    </div>
   </main>
+<script is:inline type="module" define:vars={{ defWalls , defNumRows, defNumColumns, defLength, defWidth, defHeight, defWallThickness }}>
+  import * as THREE from "three";
+  import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+  import { STLLoader } from "three/addons/loaders/STLLoader.js";
+
+  const CamWidth = 100;
+  const CamHeight = 100;
+
+  const scene = new THREE.Scene();
+  // const camera = new THREE.OrthographicCamera(
+  //   CamWidth / -1,
+  //   CamWidth / 1,
+  //   CamHeight / 1,
+  //   CamHeight / -1,
+  //   1,
+  //   1000
+  // );
+  const camera = new THREE.PerspectiveCamera( 45, CamWidth / CamHeight, 1, 1000 );
+
+  const renderer = new THREE.WebGLRenderer();
+  renderer.setSize(window.innerWidth / 2, window.innerHeight * 0.9);
+
+  const canvas = document.getElementById("myCanvas");
+  canvas.appendChild(renderer.domElement);
+
+  const light = new THREE.HemisphereLight(0xffffff, 0x000000, 5);
+  scene.add(light);
+
+
+  // Lighting
+  const ambientLight = new THREE.AmbientLight(0x404040, 2); // Soft ambient light
+  scene.add(ambientLight);
+
+
+  var grid = new THREE.GridHelper(200, 20);
+  scene.add(grid);
+
+  const controls = new OrbitControls(camera, renderer.domElement);
+  camera.position.set(0, 80, 80);
+  controls.update();
+
+  let lastModel = null; // Variable to store reference to the last model
+  function removeLastModel() {
+    if (lastModel) {
+      scene.remove(lastModel); // Remove the last model from the scene
+
+      // Dispose of the geometry and material to free up resources
+      lastModel.geometry.dispose();
+      lastModel.material.dispose();
+
+      lastModel = null; // Reset the lastModel reference
+    }
+  }
+
+  let walls = defWalls;
+  let numColumns = defNumColumns;
+  let numRows = defNumRows;
+  let length = defLength;
+  let width = defWidth;
+  let height = defHeight;
+  let wallThickness = defWallThickness;
+  function updateWalls() {
+
+
+    let newColumns = parseFloat(document.getElementsByName("numColumns")[0].value)
+    if (newColumns) {
+      if (newColumns !== numColumns) {
+        numColumns = document.getElementsByName("numColumns")[0].value || numColumns;
+        numRows = document.getElementsByName("numRows")[0].value || numRows;
+        window.location.replace(`/box?col=${numColumns}&row=${numRows}`);
+      }
+    }
+
+    let newRows = parseFloat(document.getElementsByName("numRows")[0].value)
+    if (newRows) {
+      if (newRows !== numRows) {
+        numColumns = document.getElementsByName("numColumns")[0].value || numColumns;
+        numRows = document.getElementsByName("numRows")[0].value || numRows;
+        window.location.replace(`/box?col=${numColumns}&row=${numRows}`);
+      }
+    }
+    
+    length = document.getElementsByName("length")[0].value || length;
+    width = document.getElementsByName("width")[0].value || width;
+    height = document.getElementsByName("height")[0].value || height;
+    wallThickness = document.getElementsByName("wallThickness")[0].value || wallThickness;
+
+    document.getElementById('Ux').innerText = `${(length / numColumns - wallThickness).toFixed(2)}mm`
+    document.getElementById('Uy').innerText = `${(width / numRows - wallThickness).toFixed(2)}mm`
+
+    for (let i = 0; i < numRows; i++) {
+      for (let j = 0; j < numColumns; j++) {
+        const xCheckbox = document.getElementsByName(`${walls[i][j].n}y`)[0];
+        const yCheckbox = document.getElementsByName(`${walls[i][j].n}x`)[0];
+
+        walls[i][j].x = xCheckbox.checked ? 1 : 0;
+        walls[i][j].y = yCheckbox.checked ? 1 : 0;
+      }
+    }
+  }
+
+  const wallsForm = document.getElementById("walls");
+
+  wallsForm.addEventListener("change", (e) => {
+    updateWalls();
+  });
+
+  wallsForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+
+    updateWalls();
+
+    let data = {
+      numColumns: numColumns,
+      numRows: numRows,
+      wallThickness: wallThickness,
+      length: length,
+      width: width,
+      height: height,
+    };
+
+    const apiUrl = "/box/creator";
+    const requestOptions = {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ walls, data }),
+    };
+
+    fetch(apiUrl, requestOptions)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.arrayBuffer(); // Fetch the data as an ArrayBuffer
+      })
+      .then((arrayBuffer) => {
+        // Load the STL Model using STLLoader
+        const loader = new STLLoader();
+        const geometry = loader.parse(arrayBuffer); // Parse the ArrayBuffer to geometry
+
+        const material = new THREE.MeshPhongMaterial({ color: 0xffffff });
+        const mesh = new THREE.Mesh(geometry, material);
+        scene.add(mesh);
+
+        // Set initial position and scale of the model
+        mesh.position.set(0, 0, 0);
+        mesh.rotation.set(-Math.PI / 2, 0, 0);
+        mesh.scale.set(1, 1, 1); // Adjust scale according to your model
+
+        removeLastModel();
+
+        lastModel = mesh;
+      })
+      .catch((error) => {
+        console.error("Error loading model:", error);
+      });
+  });
+
+  function animate() {
+    requestAnimationFrame(animate);
+    controls.update();
+    renderer.render(scene, camera);
+  }
+
+  renderer.setAnimationLoop(animate);
+</script>
+<script is:inline>
+  function checkAllWalls() {
+    // Select all input elements of type checkbox
+    const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+
+    // Iterate through each checkbox and check it
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = true;
+    });
+  }
+  function checkHalfWalls() {
+    location.reload();
+  }
+</script>
 </Layout>
 <style>
+  img  {
+    max-width: 3rem;
+    max-height: 3rem;
+  }
+  .info {
+    display: flex;
+    align-items: center;
+  }
+  .options {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    margin-bottom: 2rem;
+
+  }
+    #myCanvas {
+    width: 50vw;
+    height: 90vh;
+  }
   main {
     display: flex;
   }
