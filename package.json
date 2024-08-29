@@ -11,10 +11,9 @@
   },
   "dependencies": {
     "@astrojs/check": "^0.9.3",
-    "@astrojs/cloudflare": "^11.0.4",
+    "@astrojs/node": "^8.3.3",
     "@jscad/io": "^2.4.8",
     "@jscad/modeling": "^2.12.2",
-    "@jscad/regl-renderer": "^2.6.9",
     "@jscad/stl-serializer": "^2.1.17",
     "astro": "^4.14.2",
     "three": "^0.167.1",

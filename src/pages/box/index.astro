@@ -6,8 +6,8 @@ interface Cordenates {
   y: number;
   n: number;
 }
-const defNumColumns = parseInt(Astro.url.searchParams.get('col') ?? '12');
-const defNumRows = parseInt(Astro.url.searchParams.get('row') ?? '18');
+const defNumColumns = parseInt(Astro.url.searchParams.get('col') ?? '4');
+const defNumRows = parseInt(Astro.url.searchParams.get('row') ?? '4');
 
 
 let n = 0;
@@ -48,23 +48,23 @@ const defWallThickness = 0.8;
     <div style="display: flex;">
       <img src="/Tx.svg" alt="">
       <div style="display: flex; flex-direction: column;">
-        <label for="length">Length</label>
-        <input type="number" name=`length` placeholder={`${defLength}`}/>
+        <label for="length">Length (mm)</label>
+        <input type="number" name=`length` placeholder={`${defLength}`} max="200"/>
       </div>
     </div>
 
     <div style="display: flex;">
       <img src="/Ty.svg" alt="">
       <div style="display: flex; flex-direction: column;">
-        <label for="length">Width</label>
-        <input type="number" name=`width` placeholder={`${defWidth}`}/>
+        <label for="length">Width (mm)</label>
+        <input type="number" name=`width` placeholder={`${defWidth}`} max="200"/>
       </div>
     </div>
 
-    <label for="height">Height</label>
-    <input type="number" name=`height` placeholder={`${defHeight}`}/>
+    <label for="height">Height (mm)</label>
+    <input type="number" name=`height` placeholder={`${defHeight}`} max="200"/>
 
-    <label for="wallThickness">Wall Thickness</label>
+    <label for="wallThickness">Wall Thickness (mm)</label>
     <input type="number" name=`wallThickness`placeholder={`${defWallThickness}`} step="0.4" min="0.8"/>
 
     <div class="info"><img src="/Ux.svg" alt=""><p id='Ux'></p></div>
@@ -110,8 +110,7 @@ const defWallThickness = 0.8;
       </div>
       <button>Submit</button>
     </form>
-    <div class="viwer">
-      <div id="myCanvas"></div> 
+    <div class="viwer" id="myCanvas">
     </div>
   </main>
 <script is:inline type="module" define:vars={{ defWalls , defNumRows, defNumColumns, defLength, defWidth, defHeight, defWallThickness }}>
@@ -123,20 +122,16 @@ const defWallThickness = 0.8;
   const CamHeight = 100;
 
   const scene = new THREE.Scene();
-  // const camera = new THREE.OrthographicCamera(
-  //   CamWidth / -1,
-  //   CamWidth / 1,
-  //   CamHeight / 1,
-  //   CamHeight / -1,
-  //   1,
-  //   1000
-  // );
   const camera = new THREE.PerspectiveCamera( 45, CamWidth / CamHeight, 1, 1000 );
 
-  const renderer = new THREE.WebGLRenderer();
-  renderer.setSize(window.innerWidth / 2, window.innerHeight * 0.9);
+ 
 
   const canvas = document.getElementById("myCanvas");
+
+  const renderer = new THREE.WebGLRenderer();
+  renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+  //camera.aspect = canvas.clientWidth /  canvas.clientHeight;
+
   canvas.appendChild(renderer.domElement);
 
   const light = new THREE.HemisphereLight(0xffffff, 0x000000, 5);
@@ -274,11 +269,26 @@ const defWallThickness = 0.8;
       });
   });
 
-  function animate() {
-    requestAnimationFrame(animate);
-    controls.update();
-    renderer.render(scene, camera);
+    // Function to handle window resize
+  function onWindowResize() {
+
+    const container = document.getElementById("myCanvas")
+    const width = container.clientWidth;
+    const height = container.clientHeight;
+    
+    renderer.setSize(width, height);
+    camera.aspect = width / height;
+    camera.updateProjectionMatrix();
+
   }
+
+  window.addEventListener('resize', onWindowResize);
+
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+    }
 
   renderer.setAnimationLoop(animate);
 </script>
@@ -300,7 +310,6 @@ const defWallThickness = 0.8;
 <style>
   img  {
     max-width: 3rem;
-    max-height: 3rem;
   }
   .info {
     display: flex;
@@ -312,10 +321,6 @@ const defWallThickness = 0.8;
     align-items: flex-start;
     margin-bottom: 2rem;
 
-  }
-    #myCanvas {
-    width: 50vw;
-    height: 90vh;
   }
   main {
     display: flex;
@@ -348,5 +353,17 @@ const defWallThickness = 0.8;
   /* Styles when the checkbox is not checked */
   .grid input:not(:checked) {
     background-color: lightcoral;
+  }
+  @media screen and (max-width: 600px) {
+    main {
+      display: block;
+    }
+    .viwer,
+    form {
+      margin: 0 !important;
+    }
+    #myCanvas {
+      height: 80vh;
+    }
   }
 </style>

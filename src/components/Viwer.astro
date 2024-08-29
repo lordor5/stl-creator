@@ -1,0 +1,152 @@
+---
+const { walls } = Astro.props;
+---
+
+<div id="myCanvas"></div>
+
+<script is:inline type="module" define:vars={{ walls }}>
+  import * as THREE from "three";
+  import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+  import { STLLoader } from "three/addons/loaders/STLLoader.js";
+
+  const CamWidth = 100;
+  const CamHeight = 100;
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.OrthographicCamera(
+    CamWidth / -1,
+    CamWidth / 1,
+    CamHeight / 1,
+    CamHeight / -1,
+    1,
+    1000
+  );
+
+  const renderer = new THREE.WebGLRenderer();
+  renderer.setSize(window.innerWidth / 2, window.innerHeight * 0.9);
+
+  const canvas = document.getElementById("myCanvas");
+  canvas.appendChild(renderer.domElement);
+
+  const light = new THREE.HemisphereLight(0xffffff, 0x000000, 5);
+  scene.add(light);
+
+  var grid = new THREE.GridHelper(200, 20);
+  scene.add(grid);
+
+  const controls = new OrbitControls(camera, renderer.domElement);
+  camera.position.set(-100, 100, 100);
+  controls.update();
+
+  let lastModel = null; // Variable to store reference to the last model
+
+  function removeLastModel() {
+    if (lastModel) {
+      scene.remove(lastModel); // Remove the last model from the scene
+
+      // Dispose of the geometry and material to free up resources
+      lastModel.geometry.dispose();
+      lastModel.material.dispose();
+
+      lastModel = null; // Reset the lastModel reference
+    }
+  }
+
+  let numColumns;
+  let numRows;
+  let length;
+  let width;
+  let height;
+  let wallThickness;
+  function updateWalls() {
+    numColumns = document.getElementsByName("numColumns")[0].value || 12;
+    numRows = document.getElementsByName("numRows")[0].value || 18;
+    length = document.getElementsByName("length")[0].value || 50;
+    width = document.getElementsByName("width")[0].value || 48;
+    height = document.getElementsByName("height")[0].value || 5.5;
+    wallThickness = document.getElementsByName("wallThickness")[0].value || 0.8;
+
+    for (let i = 0; i < numRows; i++) {
+      for (let j = 0; j < numColumns; j++) {
+        const xCheckbox = document.getElementsByName(`${walls[i][j].n}y`)[0];
+        const yCheckbox = document.getElementsByName(`${walls[i][j].n}x`)[0];
+
+        walls[i][j].x = xCheckbox.checked ? 1 : 0;
+        walls[i][j].y = yCheckbox.checked ? 1 : 0;
+      }
+    }
+  }
+
+  const wallsForm = document.getElementById("walls");
+
+  wallsForm.addEventListener("change", (e) => {
+    updateWalls();
+  });
+
+  wallsForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+
+    updateWalls();
+
+    let data = {
+      numColumns: numColumns,
+      numRows: numRows,
+      wallThickness: wallThickness,
+      length: length,
+      width: width,
+      height: height,
+    };
+
+    const apiUrl = "/box/creator";
+    const requestOptions = {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ walls, data }),
+    };
+
+    fetch(apiUrl, requestOptions)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.arrayBuffer(); // Fetch the data as an ArrayBuffer
+      })
+      .then((arrayBuffer) => {
+        // Load the STL Model using STLLoader
+        const loader = new STLLoader();
+        const geometry = loader.parse(arrayBuffer); // Parse the ArrayBuffer to geometry
+
+        const material = new THREE.MeshPhongMaterial({ color: 0x555555 });
+        const mesh = new THREE.Mesh(geometry, material);
+        scene.add(mesh);
+
+        // Set initial position and scale of the model
+        mesh.position.set(0, 0, 0);
+        mesh.rotation.set(-Math.PI / 2, 0, 0);
+        mesh.scale.set(1, 1, 1); // Adjust scale according to your model
+
+        removeLastModel();
+
+        lastModel = mesh;
+      })
+      .catch((error) => {
+        console.error("Error loading model:", error);
+      });
+  });
+
+  function animate() {
+    requestAnimationFrame(animate);
+    controls.update();
+    renderer.render(scene, camera);
+  }
+
+  renderer.setAnimationLoop(animate);
+</script>
+<style>
+  #myCanvas {
+    width: 50vw;
+    height: 90vh;
+  }
+</style>
