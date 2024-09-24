@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@astrojs/check": "^0.9.3",
-    "@astrojs/node": "^8.3.3",
+    "@astrojs/node": "^8.3.4",
     "@jscad/io": "^2.4.8",
     "@jscad/modeling": "^2.12.2",
     "@jscad/stl-serializer": "^2.1.17",
