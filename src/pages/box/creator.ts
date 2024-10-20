@@ -10,11 +10,6 @@ const { stlSerializer } = pkg3;
 import pkg4 from "@jscad/modeling/src/operations/transforms";
 const { translate } = pkg4;
 
-import pkg5 from "@jscad/modeling/src/geometries";
-const { geom3 } = pkg5;
-
-import type { APIRoute } from "astro";
-
 interface Cordenates {
   x: number;
   y: number;

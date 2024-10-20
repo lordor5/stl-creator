@@ -1,5 +1,5 @@
 ---
-import Layout from "../layouts/Layout.astro";
+import Layout from "../../layouts/Layout.astro";
 
 interface Cordenates {
   x: number;
@@ -32,7 +32,7 @@ const defWallThickness = 0.8;
 <Layout title="Welcome to Astro.">
   <main>
     <form
-      action="/initiativeWithMagnets.js"
+      action="/Initiative/initiative"
       method="POST"
       enctype="multipart/form-data"
       id="walls"
@@ -136,85 +136,29 @@ const defWallThickness = 0.8;
       updateCameraAndControls(mesh);
     }
 
-    let walls = defWalls;
-    let numColumns = defNumColumns;
-    let numRows = defNumRows;
-    let length = defLength;
-    let width = defWidth;
-    let height = defHeight;
-    let wallThickness = defWallThickness;
-    function updateWalls() {
-      let newColumns = parseFloat(
-        document.getElementsByName("numColumns")[0].value
-      );
-      if (newColumns) {
-        if (newColumns !== numColumns) {
-          numColumns =
-            document.getElementsByName("numColumns")[0].value || numColumns;
-          numRows = document.getElementsByName("numRows")[0].value || numRows;
-          window.location.replace(`/box?col=${numColumns}&row=${numRows}`);
-        }
-      }
-
-      let newRows = parseFloat(document.getElementsByName("numRows")[0].value);
-      if (newRows) {
-        if (newRows !== numRows) {
-          numColumns =
-            document.getElementsByName("numColumns")[0].value || numColumns;
-          numRows = document.getElementsByName("numRows")[0].value || numRows;
-          window.location.replace(`/box?col=${numColumns}&row=${numRows}`);
-        }
-      }
-
-      length = document.getElementsByName("length")[0].value || length;
-      width = document.getElementsByName("width")[0].value || width;
-      height = document.getElementsByName("height")[0].value || height;
-      wallThickness =
-        document.getElementsByName("wallThickness")[0].value || wallThickness;
-
-      document.getElementById("Ux").innerText =
-        `${(length / numColumns - wallThickness).toFixed(2)}mm`;
-      document.getElementById("Uy").innerText =
-        `${(width / numRows - wallThickness).toFixed(2)}mm`;
-
-      for (let i = 0; i < numRows; i++) {
-        for (let j = 0; j < numColumns; j++) {
-          const xCheckbox = document.getElementsByName(`${walls[i][j].n}y`)[0];
-          const yCheckbox = document.getElementsByName(`${walls[i][j].n}x`)[0];
-
-          walls[i][j].x = xCheckbox.checked ? 1 : 0;
-          walls[i][j].y = yCheckbox.checked ? 1 : 0;
-        }
-      }
-    }
-
     const wallsForm = document.getElementById("walls");
-
-    wallsForm.addEventListener("change", (e) => {
-      updateWalls();
-    });
 
     wallsForm.addEventListener("submit", (e) => {
       e.preventDefault();
 
-      updateWalls();
+      // updateWalls();
 
-      let data = {
-        numColumns: numColumns,
-        numRows: numRows,
-        wallThickness: wallThickness,
-        length: length,
-        width: width,
-        height: height,
-      };
+      // let data = {
+      //   numColumns: numColumns,
+      //   numRows: numRows,
+      //   wallThickness: wallThickness,
+      //   length: length,
+      //   width: width,
+      //   height: height,
+      // };
 
-      const apiUrl = "/box/creator";
+      const apiUrl = "Initiative/initiative";
       const requestOptions = {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ walls, data }),
+        //body: JSON.stringify({ walls, data }),
       };
 
       fetch(apiUrl, requestOptions)
