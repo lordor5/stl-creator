@@ -1,10 +1,29 @@
 ---
+import { readFileSync } from "fs";
+import { transform } from "@jscad/core";
+
 import Layout from "../../layouts/Layout.astro";
 
-interface Cordenates {
-  x: number;
-  y: number;
-  n: number;
+export async function get() {
+  try {
+    // Read the JSCAD file content as a string
+    const jscadScript = readFileSync("path/to/your/file.jscad", "utf8");
+
+    // Parse and evaluate the JSCAD script
+    const { api } = await import("@jscad/core");
+    const mainFunction = new Function("api", jscadScript); // injects JSCAD API into the script's scope
+    const shapes = mainFunction(api); // Call the JSCAD script's main function to get shapes
+
+    // Convert shapes to 3D model data
+    const data3d = await transform({ output: "json" }, shapes);
+
+    return {
+      body: JSON.stringify({ model: data3d }),
+      headers: { "Content-Type": "application/json" },
+    };
+  } catch (error) {
+    return { status: 500, body: JSON.stringify({ error: error.message }) };
+  }
 }
 ---
 

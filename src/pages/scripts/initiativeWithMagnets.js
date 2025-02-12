@@ -15,6 +15,8 @@ const { measureBoundingBox } = require("@jscad/modeling").measurements;
 // https://www.thingiverse.com/thing:4057843
 // https://www.thingiverse.com/thing:4703189/files
 
+import customFont from "../../vector/CustomFont.js";
+
 const texto = "Boss";
 const numero = "2";
 const outerRadius = 5; // Outer radius of the hexagon
@@ -191,7 +193,7 @@ function createRaft(numero, text) {
 
 function drawText(text, size) {
   const name = vectorText(
-    { height: size, align: "right", lineSpacing: 2 },
+    { height: size, align: "right", lineSpacing: 2, font: customFont },
     text
   );
 
