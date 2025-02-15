@@ -2,7 +2,7 @@ const jscad = require("@jscad/modeling");
 const { subtract, union } = jscad.booleans;
 const { polygon, cylinder, cuboid } = jscad.primitives;
 const { extrudeLinear } = require("@jscad/modeling").extrusions;
-const { translate, rotate } = require("@jscad/modeling").transforms;
+const { translate, rotate, translateZ } = require("@jscad/modeling").transforms;
 const { colorize } = jscad.colors;
 const { vectorText } = require("@jscad/modeling").text;
 const { path2 } = require("@jscad/modeling").geometries;
@@ -10,30 +10,144 @@ const { expand } = require("@jscad/modeling").expansions;
 const { measureBoundingBox } = require("@jscad/modeling").measurements;
 
 // inpiracion
-// https://www.etsy.com/listing/1527787822/dd-dm-screen-custom-initiative-tracker?ga_order=most_relevant&ga_search_type=all&ga_view_type=gallery&ga_search_query=initiative+tracker&ref=sr_gallery-1-10&bes=1&sts=1&content_source=b6635dc994eef66aac47a4033c124e3908dfb1ec%253A1527787822&search_preloaded_img=1&organic_search_click=1&variation0=3893915074&variation1=4331951279
+// https://www.etsy.com/listing/1527787822/dd-dm-screen-custom-initiative-tracker
 // https://www.thingiverse.com/thing:3859240/files
 // https://www.thingiverse.com/thing:4057843
 // https://www.thingiverse.com/thing:4703189/files
 
-import customFont from "../../vector/CustomFont.js";
+//import customFont from "../../vector/CustomFont.js";
 
-const texto = "Boss";
-const numero = "2";
+const texto = "Enemgo";
+const numero = "1";
+
 const outerRadius = 5; // Outer radius of the hexagon
-// Height of the extrusion
-const raftHeight = 1.2;
+const raftHeight = 1.2; // Height of the extrusion
 
-const squareThickness = 2; // Thickness of the hexagon's wall
-const textBold = 0.7;
-const textWidth = outerRadius / 1.2;
+const squareThickness = 1.5; // Thickness of the hexagon's wall
+const textBold = 0.4;
+const textWidth = outerRadius / 1.5;
 const textHeight = 0.5;
 
-const anchoSuperficie = 18;
+const anchoSuperficie = 18; //grosor de la madera/carton
 
-const magnetWidth = 6 + 0.8;
-const magnetHeight = 3.5;
+const magnetWidth = 10 + 1.4;
+const magnetHeight = 3 + 0.4;
+
+module.exports = { main };
 
 function main() {
+  const enemigo = iniciativa();
+
+  const Veneno = efecto();
+
+  console.log("bounding box: ", measureBoundingBox(Veneno));
+  return [Veneno, enemigo];
+}
+
+// efectos
+function efecto() {
+  let raftBottom = extrudeLinear(
+    { height: raftHeight },
+    polygon({
+      points: createArrow(outerRadius + 0.4 * 2 * 4, magnetHeight + 0.2 * 4),
+    })
+  );
+
+  let magnetHole = createMagnetHole();
+  magnetHole = rotate([0, Math.PI / 2, 0], magnetHole);
+  magnetHole = translate(
+    [0, 0, outerRadius + 0.4 * 4 + raftHeight],
+    magnetHole
+  );
+
+  let raftTop = extrudeLinear(
+    { height: raftHeight },
+    polygon({
+      points: createArrow(outerRadius + 0.4 * 2 * 4, magnetHeight + 0.2 * 4),
+    })
+  );
+  raftTop = translateZ(outerRadius * 2 + 0.4 * 2 * 4 + raftHeight, raftTop);
+
+  let effect = union(raftTop, magnetHole, raftBottom);
+  effect = rotate([Math.PI / 2, 0, 0], effect);
+  effect = translate(
+    [0, outerRadius + 0.4 * 4 + raftHeight, outerRadius + 0.4 * 4],
+    effect
+  );
+
+  return effect;
+}
+
+function createArrow(radius, height) {
+  const points = [];
+
+  let angle = (Math.PI / 3) * 0; // 60 degrees for each corner
+  let x = height / 2;
+  let y = 0;
+  points.push([x, y]);
+
+  angle = (Math.PI / 3) * 1; // 60 degrees for each corner
+  x = radius * Math.cos(angle) + height / 2;
+  y = radius * Math.sin(angle) - 0.5;
+  points.push([x, y]);
+
+  angle = (Math.PI / 3) * 2; // 60 degrees for each corner
+  x = radius * Math.cos(angle) + height / 2 - 0.1;
+  y = radius * Math.sin(angle) - 0.5;
+  points.push([x, y]);
+
+  angle = (Math.PI / 3) * 3;
+  x = radius * Math.cos(angle) + height / 2;
+  y = radius * Math.sin(angle);
+  points.push([x, y]);
+
+  angle = (Math.PI / 3) * 4;
+  x = radius * Math.cos(angle) + height / 2 - 0.1;
+  y = radius * Math.sin(angle) + 0.5;
+  points.push([x, y]);
+
+  angle = (Math.PI / 3) * 5;
+  x = radius * Math.cos(angle) + height / 2;
+  y = radius * Math.sin(angle) + 0.5;
+  points.push([x, y]);
+
+  return points;
+}
+
+function createMagnetHole() {
+  let raftUnion = cuboid({
+    size: [
+      outerRadius * 2 + 0.4 * 2 * 4,
+      outerRadius * 2 + 0.4 * 2 * 4,
+      magnetHeight + 0.2 * 4,
+    ],
+  });
+
+  let magnetEntrance = cuboid({
+    size: [magnetWidth, magnetWidth, magnetHeight],
+    center: [0, magnetWidth / 1.35, 0],
+  });
+
+  //Make a second hole to be able to take out the magenet
+  let magnetExtractor = cuboid({
+    size: [magnetWidth / 3, magnetWidth / 3, magnetHeight],
+    center: [0, -magnetWidth / 2, 0],
+  });
+
+  let magnet = cylinder({
+    height: magnetHeight,
+    radius: magnetWidth / 2,
+    segments: 100,
+  });
+
+  magnet = union(magnet, magnetEntrance, magnetExtractor);
+  raftUnion = subtract(raftUnion, magnet);
+
+  return [raftUnion];
+}
+
+//Iniciativa
+function iniciativa() {
   const raftTop = createRaft(numero, texto);
 
   let raftUnion = extrudeLinear(
@@ -69,21 +183,9 @@ function main() {
 
   let finalShape = union(raftTop, raftUnion, raftBottom);
   finalShape = rotate([0, -(Math.PI * 2) / 4, 0], finalShape);
-  finalShape = translate([0, 0, outerRadius], finalShape);
+  finalShape = translate([-anchoSuperficie / 2, 20, outerRadius], finalShape);
 
   return [finalShape];
-}
-
-// Helper function to create hexagon points
-function createHexagon(radius) {
-  const points = [];
-  for (let i = 0; i <= 4; i++) {
-    const angle = (Math.PI / 2) * i; // 60 degrees for each corner
-    const x = radius * Math.cos(angle);
-    const y = radius * Math.sin(angle);
-    points.push([x, y]);
-  }
-  return points;
 }
 
 function createHexagonRaft(radius, width) {
@@ -193,7 +295,7 @@ function createRaft(numero, text) {
 
 function drawText(text, size) {
   const name = vectorText(
-    { height: size, align: "right", lineSpacing: 2, font: customFont },
+    { height: size, align: "right", lineSpacing: 2 /*font: customFont*/ },
     text
   );
 
@@ -206,5 +308,3 @@ function drawText(text, size) {
 
   return name.map((segment) => segmentToPath(segment));
 }
-
-module.exports = { main };
