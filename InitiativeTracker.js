@@ -53,7 +53,7 @@ function main() {
   
   //console.log("bounding box: ", measureBoundingBox(Veneno));
   
-  return union(veneno,enemigo);
+  return union(veneno);
 }
 
 // efectos
@@ -80,12 +80,12 @@ function efecto() {
 
   let raftTop = createArrow(totalWidth/2, 0,raftHeight);
   raftTop = rotate([Math.PI / 2, 0,Math.PI / 2], raftTop);
-  raftTop = translate([anchoSuperficie/2 + raftHeight/2,-TotalHeight/2,0], raftTop);
+  raftTop = translate([anchoSuperficie/2 + raftHeight/2,-TotalHeight/2-raftHeight*2,0], raftTop);
 
   
   let raftBottom = createArrow(totalWidth/2, 0,raftHeight);
   raftBottom = rotate([Math.PI / 2, 0,Math.PI / 2], raftBottom);
-  raftBottom = translate([-anchoSuperficie/2 - raftHeight/2,-TotalHeight/2,0], raftBottom);
+  raftBottom = translate([-anchoSuperficie/2 - raftHeight/2,-TotalHeight/2-raftHeight*2,0], raftBottom);
 
   let effect = union( magnetHole, raftBottom);
   //effect = rotate([Math.PI / 2, 0, -Math.PI / 2], effect);
