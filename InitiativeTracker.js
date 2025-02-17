@@ -21,7 +21,7 @@ const nozleDiameter = 0.4;
 const layerHeight = 0.2;
 
 const texto = "Enemigo";
-const numero = "1";
+const numero = "2";
 
 const anchoSuperficie = 18; //grosor de la madera/carton
 
@@ -48,53 +48,32 @@ function main() {
   const enemigo = iniciativa();
 
   let veneno = efecto();
-  veneno = translate([0,-15,0],veneno);
-
+  veneno = translate([0,-TotalHeight-5,0],veneno);
   
-  //console.log("bounding box: ", measureBoundingBox(Veneno));
-  
-  return union(veneno);
+  return union(veneno,enemigo);
 }
 
 // efectos
 function efecto() {
 
-  /*let raftBottom = extrudeLinear(
-    { height: raftHeight },
-    polygon({
-      points: createArrow(totalWidth/2, 0),
-    })
-  );
-  */
+  let magnetHole = createMagnetHole(magnetWidth,magnetHeight,totalWidth,TotalHeight,anchoSuperficie-raftHeight/2);
+
+  const cube = cuboid({size: [anchoSuperficie+raftHeight/2,TotalHeight, totalWidth],
+                      center: [0,-TotalHeight,0]
+                      });
   
-  //raftBottom = translate(
-  //  [anchoSuperficie*0, 0, TotalHeight*1.5],
-  //  raftBottom
-  //);
-
-  let magnetHole = createMagnetHole();
-  //magnetHole = translate(
-  //  [0, 0, totalWidth/2,0],
-  //  magnetHole
-  //);
-
-  let raftTop = createArrow(totalWidth/2, 0,raftHeight);
+  let raftTop = createArrow(totalWidth/2, magnetHeight/2-3,raftHeight+raftHeight/2);
   raftTop = rotate([Math.PI / 2, 0,Math.PI / 2], raftTop);
-  raftTop = translate([anchoSuperficie/2 + raftHeight/2,-TotalHeight/2-raftHeight*2,0], raftTop);
-
+  raftTop = translate([anchoSuperficie/2 + raftHeight/2,TotalHeight/2-totalWidth/2/Math.cos(Math.PI / 6),0], raftTop);
   
-  let raftBottom = createArrow(totalWidth/2, 0,raftHeight);
+  let raftBottom = createArrow(totalWidth/2, 0,raftHeight+raftHeight/2);
   raftBottom = rotate([Math.PI / 2, 0,Math.PI / 2], raftBottom);
-  raftBottom = translate([-anchoSuperficie/2 - raftHeight/2,-TotalHeight/2-raftHeight*2,0], raftBottom);
+  raftBottom = translate([-anchoSuperficie/2 - raftHeight/2,TotalHeight/2-totalWidth/2/Math.cos(Math.PI / 6),0], raftBottom);
 
-  let effect = union( magnetHole, raftBottom);
-  //effect = rotate([Math.PI / 2, 0, -Math.PI / 2], effect);
-  //effect = translate(
-  //  [0, 0*outerRadius + 0.4 * 4 + raftHeight, outerRadius + 0.4 * 4],
-  //  effect
-  //);
-
-  return [raftTop, magnetHole, raftBottom];
+  let effect = union( magnetHole, raftBottom,raftTop);
+  effect = subtract(effect,cube)
+  effect = colorize([0.5,0,0,0.95],effect)
+  return [effect];
 }
 
 function createArrow(radius,width, height) {
@@ -146,7 +125,7 @@ function createArrow(radius,width, height) {
   return arrow;
 }
 
-function createMagnetHole() {
+function createMagnetHole(magnetWidth,magnetHeight,totalWidth,TotalHeight,anchoSuperficie) {
   let raftUnion = cuboid({
     size: [
       anchoSuperficie,
@@ -188,46 +167,16 @@ function iniciativa() {
   let raftBottom = createRaft(numero, texto);
   raftBottom = rotate([-Math.PI / 2,0 , Math.PI / 2], raftBottom);
   raftBottom = translate([-anchoSuperficie/2,0 , 0], raftBottom);
-  /*let raftUnion = extrudeLinear(
-    { height: -anchoSuperficie },
-    polygon({
-      points: createHexagon(outerRadius,0),
-    })
-  );
 
-  /*
-  let magnetEntrance = cuboid({
-    center: [0, -magnetHeight / 2, magnetWidth / 1.32],
-    size: [magnetWidth, magnetHeight, magnetWidth],
-  });
-  let magnet = cylinder({
-    center: [0, 0, magnetHeight / 2],
-    height: magnetHeight,
-    radius: magnetWidth / 2,
-    segments: 100,
-  });
-  magnet = rotate([Math.PI / 2, 0, 0], magnet);
-  magnet = union(magnet, magnetEntrance);
-  magnet = translate(
-    [anchoSuperficie / 2, -outerRadius / 2 + magnetHeight / 1.8],
-    magnet
-  ); //-outerRadius/10
-  magnet = rotate([0, Math.PI / 2, 0], magnet);
+  let magnetEntrance = createMagnetHole(magnetWidth,magnetHeight,totalWidth,TotalHeight, anchoSuperficie);
 
-  
+  const cube = cuboid({size: [anchoSuperficie+raftHeight/2,TotalHeight, totalWidth],
+                      center: [0,-TotalHeight,0]
+                      });
+  let shape = union(magnetEntrance,raftTop,raftBottom);
+  shape = subtract(shape,cube);
 
-  */
-  let magnetEntrance = createMagnetHole();
-
-  //let raftBottom = createRaft(numero, texto);
-  //raftBottom = rotate([/*Math.PI / 100*/0, -Math.PI/2, 0], raftBottom);
-  //raftBottom = translate([-anchoSuperficie/2, 0, 0], raftBottom);
-
-  //let finalShape = union(raftTop, raftUnion);
-  //finalShape = rotate([0, -(Math.PI * 2) / 4, 0], finalShape);
-  //finalShape = translate([-anchoSuperficie / 2, 20, outerRadius], finalShape);
-
-  return [magnetEntrance,raftTop,raftBottom];
+  return [shape];
 }
 
 function createHexagon(radius, width, height) {
@@ -304,20 +253,7 @@ function createRaft(numero, text) {
     [textNumberLength / 2, -3.3, raftHeight],
     textNumber
   );
-  /*
-  if (textNumberLength > outerRadius) {
-    textNumber = drawText(numero, textWidth / 1.5);
-    textNumber = extrudeLinear({ height: textHeight }, textNumber);
-    const textNumberBoundingBox = measureBoundingBox(union(textNumber));
-    const textNumberLength =
-      textNumberBoundingBox[1][0] - textNumberBoundingBox[0][1]; // Height/Length of the text
-    textNumber = rotate([0, 0, (Math.PI * 2) / 4], textNumber)
-    textNumber = translate(
-      [textNumberLength / 4 , -textWidth / 4 - outerRadius / 2, raftHeight],
-      textNumber
-    );
-  }
-*/
+
   textNumber = colorize([1,0,0],textNumber);
 
 
