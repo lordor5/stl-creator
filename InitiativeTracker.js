@@ -20,41 +20,140 @@ const { measureBoundingBox } = require("@jscad/modeling").measurements;
 const nozleDiameter = 0.4;
 const layerHeight = 0.2;
 
-const texto = "Enemigo";
-const numero = "2";
+//const texto = "Enemigo";
+//const numero = "3";
 
-const anchoSuperficie = 18; //grosor de la madera/carton
+//const anchoSuperficie = 18; //grosor de la madera/carton
 
-let magnetWidth = 10; //Tamaño del iman diametro
-let magnetHeight = 3+3; //Grosor del iman
+//let magnetWidth = 10; //Tamaño del iman diametro
+//let magnetHeight = 3; //Grosor del iman
 
-magnetWidth += 1.4;  //añadimons tolerancias de seguridad
-magnetHeight += 0.4; //añadimons tolerancias de seguridad
+//magnetWidth += 1.4;  //añadimons tolerancias de seguridad
+//magnetHeight += 0.4; //añadimons tolerancias de seguridad
 
-const totalWidth = magnetWidth  + 2 * nozleDiameter * 2; //11.4 + 1.6 = 13
-const TotalHeight = magnetHeight + 2 * layerHeight * 4;  //3.4+0.8 = 4.2
+//const totalWidth = magnetWidth  + 2 * nozleDiameter * 2; //11.4 + 1.6 = 13
+//const TotalHeight = magnetHeight + 2 * layerHeight * 4;  //3.4+0.8 = 4.2
 
 //const outerRadius = totalWidth/2; // Outer radius of the hexagon
-const raftHeight = 1.2; // Height of the extrusion
+//const raftHeight = 1.2; // Height of the extrusion
 
-const squareThickness = 1.5; // Thickness of the hexagon's wall
-const textBold = 0.4;
-const textWidth = totalWidth/2 / 1.5;
-const textHeight = 0.5;
+//const squareThickness = 1.5; // Thickness of the hexagon's wall
+//const textBold = 0.4;
+//const textWidth = totalWidth/2 / 1.5;
+//const textHeight = 0.5;
+
+const efectoData = [{
+  magnetWidth: 10,
+  magnetHeight: 3,
+  anchoSuperficie: 18,
+  raftHeight: 1.2,
+  nozleDiameter: nozleDiameter,
+  layerHeight: layerHeight,
+  },{
+  magnetWidth: 10,
+  magnetHeight: 3+2,
+  anchoSuperficie: 18,
+  raftHeight: 1.2,
+  nozleDiameter: nozleDiameter,
+  layerHeight: layerHeight,
+  },{
+  magnetWidth: 10,
+  magnetHeight: 3*3,
+  anchoSuperficie: 18,
+  raftHeight: 1.2,
+  nozleDiameter: nozleDiameter,
+  layerHeight: layerHeight,
+  },{
+  magnetWidth: 10,
+  magnetHeight: 3,
+  anchoSuperficie: 18,
+  raftHeight: 1.2,
+  nozleDiameter: nozleDiameter,
+  layerHeight: layerHeight,
+  }]
+
+const iniciativaData = [{
+  text: "Enemigo",
+  number: "3",
+  textBold: 0.4,
+  textHeight: 0.5,
+  magnetWidth: 10,
+  magnetHeight: 3,
+  anchoSuperficie: 18,
+  raftHeight: 1.2,
+  nozleDiameter: nozleDiameter,
+  layerHeight: layerHeight,
+  },{
+  text: "Enemigo",
+  number: "4",
+    textBold: 0.4,
+  textHeight: 0.5,
+  magnetWidth: 10,
+  magnetHeight: 3+2,
+  anchoSuperficie: 18,
+  raftHeight: 1.2,
+  nozleDiameter: nozleDiameter,
+  layerHeight: layerHeight,
+  },{
+  text: "Enemigo",
+  number: "4",
+  textBold: 0.4,
+  textHeight: 0.5,
+  magnetWidth: 10,
+  magnetHeight: 3*3,
+  anchoSuperficie: 18,
+  raftHeight: 1.2,
+  nozleDiameter: nozleDiameter,
+  layerHeight: layerHeight,
+  },{
+  text: "Enemigo",
+  number: "5",
+  textBold: 0.4,
+  textHeight: 0.5,
+  magnetWidth: 10,
+  magnetHeight: 3,
+  anchoSuperficie: 18,
+  raftHeight: 1.2,
+  nozleDiameter: nozleDiameter,
+  layerHeight: layerHeight,
+  }]
 
 module.exports = { main };
 
 function main() {
-  const enemigo = iniciativa();
 
-  let veneno = efecto();
-  veneno = translate([0,-TotalHeight-5,0],veneno);
+  let space = 0;
+  let enemigo = [];
+  for(let i=0; i<1 ;i++){
+    space += -iniciativaData[i-(i>0)].anchoSuperficie-10;
+    enemigo[i] = iniciativa(iniciativaData[i]);
+    enemigo[i] = translate([space,0,0],enemigo[i]);
+  }
+  
+  let veneno = [];
+  space = 0;
+  for(let i=0; i < efectoData.length;i++){
+    space += -efectoData[i-(i>0)].magnetHeight-10
+    veneno[i] = efecto(efectoData[i]);
+    veneno[i] = translate([0,space,0],veneno[i]);
+  }
   
   return union(veneno,enemigo);
 }
 
 // efectos
-function efecto() {
+function efecto(data) {
+
+  const magnetWidth = data.magnetWidth;
+  const magnetHeight = data.magnetHeight +1.4;//añadimons tolerancias de seguridad
+  const nozleDiameter = data.nozleDiameter +0.4;//añadimons tolerancias de seguridad
+  const layerHeight = data.layerHeight;
+  
+  const totalWidth = magnetWidth  + 2 * nozleDiameter * 2;
+  const TotalHeight = magnetHeight + 2 * layerHeight * 4;
+  const anchoSuperficie = data.anchoSuperficie;
+  const raftHeight = data.raftHeight;
+  
 
   let magnetHole = createMagnetHole(magnetWidth,magnetHeight,totalWidth,TotalHeight,anchoSuperficie-raftHeight/2);
 
@@ -160,7 +259,24 @@ function createMagnetHole(magnetWidth,magnetHeight,totalWidth,TotalHeight,anchoS
 }
 
 //Iniciativa
-function iniciativa() {
+function iniciativa(data) {
+
+  const magnetWidth = data.magnetWidth;
+  const magnetHeight = data.magnetHeight +1.4;//añadimons tolerancias de seguridad
+  const nozleDiameter = data.nozleDiameter +0.4;//añadimons tolerancias de seguridad
+  const layerHeight = data.layerHeight;
+  
+  const totalWidth = magnetWidth  + 2 * nozleDiameter * 2;
+  const TotalHeight = magnetHeight + 2 * layerHeight * 4;
+  const anchoSuperficie = data.anchoSuperficie;
+  const raftHeight = data.raftHeight;
+
+  const text = data.text;
+  const number = data.number;
+
+  const textWidth = totalWidth/2 / 1.5;
+  
+  
   let raftTop = createRaft(numero, texto);
   raftTop = rotate([Math.PI / 2,0 , Math.PI / 2], raftTop);
   raftTop = translate([anchoSuperficie/2,0 , 0], raftTop);
