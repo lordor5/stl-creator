@@ -26,7 +26,7 @@ const numero = "2";
 const anchoSuperficie = 18; //grosor de la madera/carton
 
 let magnetWidth = 10; //Tamaño del iman diametro
-let magnetHeight = 3; //Grosor del iman
+let magnetHeight = 3+3; //Grosor del iman
 
 magnetWidth += 1.4;  //añadimons tolerancias de seguridad
 magnetHeight += 0.4; //añadimons tolerancias de seguridad
@@ -62,13 +62,13 @@ function efecto() {
                       center: [0,-TotalHeight,0]
                       });
   
-  let raftTop = createArrow(totalWidth/2, magnetHeight/2-3,raftHeight+raftHeight/2);
+  let raftTop = createArrow(totalWidth/2, TotalHeight,raftHeight+raftHeight/2);
   raftTop = rotate([Math.PI / 2, 0,Math.PI / 2], raftTop);
-  raftTop = translate([anchoSuperficie/2 + raftHeight/2,TotalHeight/2-totalWidth/2/Math.cos(Math.PI / 6),0], raftTop);
+  raftTop = translate([anchoSuperficie/2 + raftHeight/2,TotalHeight/2,0], raftTop);
   
-  let raftBottom = createArrow(totalWidth/2, 0,raftHeight+raftHeight/2);
+  let raftBottom = createArrow(totalWidth/2, TotalHeight,raftHeight+raftHeight/2);
   raftBottom = rotate([Math.PI / 2, 0,Math.PI / 2], raftBottom);
-  raftBottom = translate([-anchoSuperficie/2 - raftHeight/2,TotalHeight/2-totalWidth/2/Math.cos(Math.PI / 6),0], raftBottom);
+  raftBottom = translate([-anchoSuperficie/2 - raftHeight/2,TotalHeight/2,0], raftBottom);
 
   let effect = union( magnetHole, raftBottom,raftTop);
   effect = subtract(effect,cube)
@@ -80,7 +80,8 @@ function createArrow(radius,width, height) {
   const points = [];
 
   radius /= Math.cos(Math.PI / 6);
-  width /= 2;
+  width = width-radius;
+  width /= 2;  
 
   let angle = (Math.PI / 3) * 0; // 60 degrees for each corner
   let x = 0 + width;
@@ -120,7 +121,7 @@ function createArrow(radius,width, height) {
     })
   );
 
-  arrow = translate([radius/2,0,-height/2], arrow);
+  arrow = translate([-radius/2-width,0,-height/2], arrow);
 
   return arrow;
 }
@@ -182,35 +183,39 @@ function iniciativa() {
 function createHexagon(radius, width, height) {
   const points = [];
 
+
   radius /= Math.cos(Math.PI / 6);
+  width = width-radius;
+  width /= 2;  
+
 
   let angle = (Math.PI / 3) * 0; // 60 degrees for each corner
-  let x = radius * Math.cos(angle) + width/2;
+  let x = radius * Math.cos(angle) + width;
   let y = radius * Math.sin(angle);
   points.push([x, y]);
 
   angle = (Math.PI / 3) * 1; // 60 degrees for each corner
-  x = radius * Math.cos(angle) + width/2;
+  x = radius * Math.cos(angle) + width;
   y = radius * Math.sin(angle);
   points.push([x, y]);
 
   angle = (Math.PI / 3) * 2; // 60 degrees for each corner
-  x = radius * Math.cos(angle) - width/2;
+  x = radius * Math.cos(angle) - width;
   y = radius * Math.sin(angle);
   points.push([x, y]);
 
   angle = (Math.PI / 3) * 3;
-  x = radius * Math.cos(angle) - width/2;
+  x = radius * Math.cos(angle) - width;
   y = radius * Math.sin(angle);
   points.push([x, y]);
 
   angle = (Math.PI / 3) * 4;
-  x = radius * Math.cos(angle) - width/2;
+  x = radius * Math.cos(angle) - width;
   y = radius * Math.sin(angle);
   points.push([x, y]);
 
   angle = (Math.PI / 3) * 5;
-  x = radius * Math.cos(angle) + width/2;
+  x = radius * Math.cos(angle) + width;
   y = radius * Math.sin(angle);
   points.push([x, y]);
 
@@ -259,15 +264,15 @@ function createRaft(numero, text) {
 
   //--------  Base Raft ----- Shapes, no text -----
 
-  let outerHexagon = createHexagon(totalWidth/2, 0, textHeight);
-  let innerHexagon = createHexagon(totalWidth/2 - squareThickness, 0, textHeight);
+  let outerHexagon = createHexagon(totalWidth/2, TotalHeight, textHeight);
+  let innerHexagon = createHexagon(totalWidth/2 - squareThickness, TotalHeight-squareThickness, textHeight);
 
   // Subtract inner hexagon from outer hexagon to create the wall
   let hexagonWithWall = subtract(outerHexagon, innerHexagon);
   hexagonWithWall = translate([0,0,raftHeight],hexagonWithWall);
 
 
-  let raft = createHexagon(totalWidth/2, textLength + totalWidth/2, raftHeight);
+  let raft = createHexagon(totalWidth/2, textLength + totalWidth/2+TotalHeight, raftHeight);
   raft = translate([(textLength+ totalWidth/2)/2,0,0],raft);
   //const ret = union(hexagonWithWall, textNumber, raft);
   
