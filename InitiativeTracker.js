@@ -77,9 +77,9 @@ const iniciativaData = [{
   number: "1",
   textBold: 0.4,
   textHeight: 0.5,
-  magnetWidth: 10,
-  magnetHeight: 3*2,
-  anchoSuperficie: 18,
+  magnetWidth: 6, //10,
+  magnetHeight: 2.5,//3*2,
+  anchoSuperficie: 6,//18,
   raftHeight: 1.2,
   nozleDiameter: nozleDiameter,
   layerHeight: layerHeight,
@@ -100,6 +100,10 @@ module.exports = { main };
 
 function main() {
 
+
+  const enemigo = iniciativa(iniciativaData[0]);
+  
+  /*
   let space = 0;
   let enemigo = [];
   for(let i=0; i < iniciativaData.length;i++){
@@ -114,9 +118,9 @@ function main() {
     space += -efectoData[i-(i>0)].magnetHeight-10
     veneno[i] = efecto(efectoData[i]);
     veneno[i] = translate([0,space,0],veneno[i]);
-  }
+  }*/
   
-  return union(veneno,enemigo);
+  return union(enemigo);
 }
 
 // efectos
