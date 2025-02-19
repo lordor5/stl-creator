@@ -37,10 +37,10 @@ const layerHeight = 0.2;
 //const outerRadius = totalWidth/2; // Outer radius of the hexagon
 //const raftHeight = 1.2; // Height of the extrusion
 
-//const squareThickness = 1.5; // Thickness of the hexagon's wall
-//const textBold = 0.4;
+const squareThickness = 1.5; // Thickness of the hexagon's wall
+const textBold = 0.4;
 //const textWidth = totalWidth/2 / 1.5;
-//const textHeight = 0.5;
+const textHeight = 0.5;
 
 const efectoData = [{
   magnetWidth: 10,
@@ -51,14 +51,14 @@ const efectoData = [{
   layerHeight: layerHeight,
   },{
   magnetWidth: 10,
-  magnetHeight: 3+2,
+  magnetHeight: 3,
   anchoSuperficie: 18,
   raftHeight: 1.2,
   nozleDiameter: nozleDiameter,
   layerHeight: layerHeight,
   },{
   magnetWidth: 10,
-  magnetHeight: 3*3,
+  magnetHeight: 3,
   anchoSuperficie: 18,
   raftHeight: 1.2,
   nozleDiameter: nozleDiameter,
@@ -73,45 +73,23 @@ const efectoData = [{
   }]
 
 const iniciativaData = [{
-  text: "Enemigo",
-  number: "3",
+  text: "Enemy",
+  number: "1",
   textBold: 0.4,
   textHeight: 0.5,
   magnetWidth: 10,
-  magnetHeight: 3,
+  magnetHeight: 3*2,
   anchoSuperficie: 18,
   raftHeight: 1.2,
   nozleDiameter: nozleDiameter,
   layerHeight: layerHeight,
   },{
-  text: "Enemigo",
-  number: "4",
+  text: "Enemy",
+  number: "2",
     textBold: 0.4,
   textHeight: 0.5,
   magnetWidth: 10,
   magnetHeight: 3+2,
-  anchoSuperficie: 18,
-  raftHeight: 1.2,
-  nozleDiameter: nozleDiameter,
-  layerHeight: layerHeight,
-  },{
-  text: "Enemigo",
-  number: "4",
-  textBold: 0.4,
-  textHeight: 0.5,
-  magnetWidth: 10,
-  magnetHeight: 3*3,
-  anchoSuperficie: 18,
-  raftHeight: 1.2,
-  nozleDiameter: nozleDiameter,
-  layerHeight: layerHeight,
-  },{
-  text: "Enemigo",
-  number: "5",
-  textBold: 0.4,
-  textHeight: 0.5,
-  magnetWidth: 10,
-  magnetHeight: 3,
   anchoSuperficie: 18,
   raftHeight: 1.2,
   nozleDiameter: nozleDiameter,
@@ -124,10 +102,10 @@ function main() {
 
   let space = 0;
   let enemigo = [];
-  for(let i=0; i<1 ;i++){
-    space += -iniciativaData[i-(i>0)].anchoSuperficie-10;
+  for(let i=0; i < iniciativaData.length;i++){
     enemigo[i] = iniciativa(iniciativaData[i]);
     enemigo[i] = translate([space,0,0],enemigo[i]);
+    space += -iniciativaData[i-(i>0)].anchoSuperficie-10;
   }
   
   let veneno = [];
@@ -153,7 +131,8 @@ function efecto(data) {
   const TotalHeight = magnetHeight + 2 * layerHeight * 4;
   const anchoSuperficie = data.anchoSuperficie;
   const raftHeight = data.raftHeight;
-  
+
+  const textWidth = totalWidth/2 / 1.5;
 
   let magnetHole = createMagnetHole(magnetWidth,magnetHeight,totalWidth,TotalHeight,anchoSuperficie-raftHeight/2);
 
@@ -271,17 +250,17 @@ function iniciativa(data) {
   const anchoSuperficie = data.anchoSuperficie;
   const raftHeight = data.raftHeight;
 
-  const text = data.text;
-  const number = data.number;
+  const texto = data.text;
+  const numero = data.number;
 
   const textWidth = totalWidth/2 / 1.5;
   
   
-  let raftTop = createRaft(numero, texto);
+  let raftTop = createRaft(numero, texto, textWidth,totalWidth,raftHeight,TotalHeight);
   raftTop = rotate([Math.PI / 2,0 , Math.PI / 2], raftTop);
   raftTop = translate([anchoSuperficie/2,0 , 0], raftTop);
 
-  let raftBottom = createRaft(numero, texto);
+  let raftBottom = createRaft(numero, texto, textWidth,totalWidth,raftHeight,TotalHeight,squareThickness);
   raftBottom = rotate([-Math.PI / 2,0 , Math.PI / 2], raftBottom);
   raftBottom = translate([-anchoSuperficie/2,0 , 0], raftBottom);
 
@@ -346,8 +325,7 @@ function createHexagon(radius, width, height) {
   return hexagon;
 }
 
-function createRaft(numero, text) {
-
+function createRaft(numero, texto,textWidth,totalWidth,raftHeight,TotalHeight) {
 
   //--------------------------------------- Text -----------------------------
 
